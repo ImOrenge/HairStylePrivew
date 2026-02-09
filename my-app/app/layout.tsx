@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Footer } from "../components/layout/Footer";
 import { Header } from "../components/layout/Header";
@@ -12,7 +13,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  return (
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const hasClerkKey =
+    typeof publishableKey === "string" &&
+    publishableKey.startsWith("pk_") &&
+    !publishableKey.includes("YOUR_");
+
+  const appShell = (
     <html lang="ko">
       <body>
         <Header />
@@ -21,4 +28,10 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  if (!hasClerkKey) {
+    return appShell;
+  }
+
+  return <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider>;
 }

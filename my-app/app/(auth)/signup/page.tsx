@@ -1,18 +1,28 @@
-import Link from "next/link";
-import { Card } from "../../../components/ui/Card";
+﻿import { SignUp } from "@clerk/nextjs";
 
 export default function SignupPage() {
-  return (
-    <div className="mx-auto flex w-full max-w-md px-6 py-10">
-      <Card className="w-full" title="회원가입" description="Clerk signup 위젯을 이 위치에 연결합니다.">
-        <p className="text-sm text-gray-700">가입 후 무료 체험 크레딧을 지급합니다.</p>
-        <p className="mt-4 text-sm text-gray-600">
-          이미 계정이 있나요?{" "}
-          <Link href="/login" className="font-semibold text-black underline">
-            로그인
-          </Link>
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const hasClerkKey =
+    typeof publishableKey === "string" &&
+    publishableKey.startsWith("pk_") &&
+    !publishableKey.includes("YOUR_");
+
+  if (!hasClerkKey) {
+    return (
+      <div className="mx-auto w-full max-w-xl px-6 py-10">
+        <h1 className="text-2xl font-bold">회원가입</h1>
+        <p className="mt-3 text-sm text-gray-600">
+          Clerk 키가 설정되지 않았습니다. <code>my-app/.env.local</code>에
+          <code className="mx-1">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code>,
+          <code className="mx-1">CLERK_SECRET_KEY</code>를 설정해 주세요.
         </p>
-      </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-md justify-center px-6 py-10">
+      <SignUp path="/signup" signInUrl="/login" />
     </div>
   );
 }
