@@ -13,11 +13,9 @@ export default function UploadPage() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { status, message, details, validateImage, resetValidation } = useUpload();
-  const { previewUrl, setOriginalImage, clearOriginalImage } = useGenerationStore((state) => ({
-    previewUrl: state.previewUrl,
-    setOriginalImage: state.setOriginalImage,
-    clearOriginalImage: state.clearOriginalImage,
-  }));
+  const previewUrl = useGenerationStore((state) => state.previewUrl);
+  const setOriginalImage = useGenerationStore((state) => state.setOriginalImage);
+  const clearOriginalImage = useGenerationStore((state) => state.clearOriginalImage);
 
   const handleSelectFile = async (file: File) => {
     setIsUploading(true);
