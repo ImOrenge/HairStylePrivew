@@ -11,6 +11,7 @@ const plans = [
     features: ["기본 스타일 프리셋", "워터마크 포함 다운로드", "최근 3개 결과 저장"],
     cta: "Free로 시작",
     tone: "basic",
+    recommended: false,
   },
   {
     name: "Starter",
@@ -34,6 +35,7 @@ const plans = [
     features: ["팀 공유 워크스페이스", "브랜드 프롬프트 템플릿", "최우선 생성 큐", "우선 지원 채널"],
     cta: "Pro 문의하기",
     tone: "premium",
+    recommended: false,
   },
 ] as const;
 
