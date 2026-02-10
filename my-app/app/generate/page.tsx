@@ -1,147 +1,163 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
-import { EditorLayout } from "../../components/editor/EditorLayout";
-import { GenerateButton } from "../../components/editor/GenerateButton";
-import { buildPrompt } from "../../components/editor/PromptBuilder";
-import { StyleSelector } from "../../components/editor/StyleSelector";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { PipelineStatusIndicator } from "../../components/generate/PipelineStatusIndicator";
 import { Button } from "../../components/ui/Button";
+import { useGenerate, type PipelinePromptArtifacts } from "../../hooks/useGenerate";
 import { useGenerationStore } from "../../store/useGenerationStore";
 
-interface PromptApiResponse {
-  prompt: string;
-  negativePrompt: string;
-  model: string;
-  promptVersion: string;
-}
-
 export default function GeneratePage() {
+  const router = useRouter();
+  const { runPipeline, resetPipeline } = useGenerate();
   const previewUrl = useGenerationStore((state) => state.previewUrl);
-  const selectedOptions = useGenerationStore((state) => state.selectedOptions);
+  const imageHydrated = useGenerationStore((state) => state.imageHydrated);
+  const isGenerating = useGenerationStore((state) => state.isGenerating);
+  const progress = useGenerationStore((state) => state.progress);
+  const pipelineStage = useGenerationStore((state) => state.pipelineStage);
+  const pipelineMessage = useGenerationStore((state) => state.pipelineMessage);
+  const pipelineError = useGenerationStore((state) => state.pipelineError);
+  const hydrateOriginalImage = useGenerationStore((state) => state.hydrateOriginalImage);
 
-  const fallbackPrompt = useMemo(() => buildPrompt(selectedOptions), [selectedOptions]);
+  useEffect(() => {
+    void hydrateOriginalImage();
+  }, [hydrateOriginalImage]);
 
   const [userInput, setUserInput] = useState("");
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptError, setPromptError] = useState<string | null>(null);
-  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
-  const [negativePrompt, setNegativePrompt] = useState<string | null>(null);
-  const [promptMeta, setPromptMeta] = useState<{ model: string; version: string } | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
+  const [artifacts, setArtifacts] = useState<PipelinePromptArtifacts | null>(null);
+  const showPipelineOverlay = isGenerating || pipelineStage === "completed";
+  const isRunDisabled = isGenerating || !previewUrl;
 
-  const finalPrompt = generatedPrompt || fallbackPrompt;
-
-  const handleGeneratePrompt = async () => {
-    setPromptError(null);
-
-    if (!userInput.trim()) {
-      setPromptError("원하는 스타일을 자유롭게 입력해 주세요.");
-      return;
-    }
-
-    setPromptLoading(true);
+  const handleRunPipeline = async () => {
+    setRunError(null);
+    setArtifacts(null);
 
     try {
-      const response = await fetch("/api/prompts/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userInput,
-          styleOptions: selectedOptions,
-        }),
-      });
+      const result = await runPipeline(userInput);
+      setArtifacts(result.artifacts);
+      await new Promise((resolve) => setTimeout(resolve, 220));
 
-      const data = (await response.json().catch(() => ({}))) as Partial<PromptApiResponse> & {
-        error?: string;
-      };
+      const shouldAttachOutputQuery =
+        Boolean(result.outputUrl) &&
+        !String(result.outputUrl).startsWith("data:") &&
+        String(result.outputUrl).length < 1500;
+      const outputQuery = shouldAttachOutputQuery && result.outputUrl
+        ? `?output=${encodeURIComponent(result.outputUrl)}`
+        : "";
+      router.push(`/result/${result.id}${outputQuery}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "생성 중 오류가 발생했습니다.";
+      setRunError(message);
+    }
+  };
 
-      if (!response.ok) {
-        setPromptError(data.error || "프롬프트 생성에 실패했습니다.");
-        return;
-      }
-
-      if (!data.prompt) {
-        setPromptError("프롬프트 응답 형식이 올바르지 않습니다.");
-        return;
-      }
-
-      setGeneratedPrompt(data.prompt);
-      setNegativePrompt(data.negativePrompt || null);
-      setPromptMeta({
-        model: data.model || "unknown",
-        version: data.promptVersion || "v1",
-      });
-    } catch {
-      setPromptError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setPromptLoading(false);
+  const handleUserInputChange = (value: string) => {
+    setUserInput(value);
+    if (pipelineStage === "failed" || pipelineStage === "completed") {
+      resetPipeline();
+      setRunError(null);
     }
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <h1 className="mb-4 text-2xl font-bold">스타일 선택 및 생성</h1>
+    <>
+      <div className="mx-auto w-full max-w-5xl px-4 pb-40 pt-8 sm:px-6">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <header className="space-y-1 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">스타일 생성</h1>
+            <p className="text-sm text-gray-600">
+              입력한 요청으로 프롬프트 생성부터 이미지 생성까지 한 번에 실행합니다.
+            </p>
+          </header>
 
-      <EditorLayout
-        preview={
-          <div className="sticky top-6 space-y-3">
-            <p className="text-sm font-semibold text-gray-600">원본 미리보기</p>
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="원본 업로드 이미지"
-                className="max-h-[520px] w-full rounded-xl object-cover"
-              />
-            ) : (
-              <div className="rounded-xl border border-dashed border-gray-300 p-8 text-sm text-gray-500">
-                업로드된 이미지가 없습니다. `/upload`에서 사진을 먼저 등록해 주세요.
+          <section className="space-y-4">
+            <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+              <div className="relative aspect-[4/5] w-full">
+                {previewUrl ? (
+                  <motion.img
+                    src={previewUrl}
+                    alt="원본 업로드 이미지"
+                    className="h-full w-full object-cover"
+                    initial={{ scale: 1.03, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  />
+                ) : !imageHydrated ? (
+                  <div className="flex h-full items-center justify-center p-8 text-sm text-gray-500">
+                    업로드한 이미지를 불러오는 중입니다...
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center p-8 text-sm text-gray-500">
+                    업로드된 이미지가 없습니다. `/upload`에서 사진을 먼저 등록해 주세요.
+                  </div>
+                )}
+
+                <AnimatePresence>
+                  {showPipelineOverlay ? (
+                    <motion.div
+                      key="pipeline-indicator"
+                      className="absolute inset-0 p-4 sm:p-8"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <PipelineStatusIndicator
+                        stage={pipelineStage}
+                        message={pipelineMessage}
+                        error={pipelineError}
+                        progress={progress}
+                      />
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
-            )}
-          </div>
-        }
-        panel={
-          <div className="space-y-6">
-            <StyleSelector />
-
-            <section className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">자유 입력 요청</p>
-              <textarea
-                value={userInput}
-                onChange={(event) => setUserInput(event.target.value)}
-                className="min-h-[88px] w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
-                placeholder="예: 뉴진스 하니 느낌 단발, 애쉬 브라운, 자연스러운 질감"
-              />
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="secondary" onClick={handleGeneratePrompt} disabled={promptLoading}>
-                  {promptLoading ? "프롬프트 생성 중..." : "프롬프트 생성"}
-                </Button>
-                {promptMeta ? (
-                  <span className="text-xs text-gray-500">
-                    model: {promptMeta.model} / version: {promptMeta.version}
-                  </span>
-                ) : null}
-              </div>
-              {promptError ? <p className="text-xs text-rose-600">{promptError}</p> : null}
-            </section>
-
-            <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-700">
-              <p className="font-semibold">최종 프롬프트</p>
-              <p className="mt-1 break-all">{finalPrompt}</p>
             </div>
 
-            {negativePrompt ? (
-              <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
-                <p className="font-semibold text-gray-700">네거티브 프롬프트</p>
-                <p className="mt-1 break-all">{negativePrompt}</p>
-              </div>
+            {artifacts ? (
+              <section className="rounded-2xl border border-gray-200 bg-white p-4 text-xs text-gray-700">
+                <p className="font-semibold">생성 프롬프트 메타</p>
+                <p className="mt-1">
+                  model: {artifacts.model} / version: {artifacts.promptVersion}
+                </p>
+                <pre className="mt-2 whitespace-pre-wrap break-words font-sans">{artifacts.prompt}</pre>
+              </section>
             ) : null}
+          </section>
+        </div>
+      </div>
 
-            <GenerateButton prompt={finalPrompt} negativePrompt={negativePrompt} disabled={!previewUrl} />
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <div className="mx-auto w-full max-w-5xl px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 sm:px-6">
+          <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
+            <textarea
+              value={userInput}
+              onChange={(event) => handleUserInputChange(event.target.value)}
+              className="h-12 min-h-12 flex-1 resize-none rounded-2xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100"
+              placeholder="예: 자연스러운 웨이브 펌, 앞머리는 가볍게"
+              disabled={!previewUrl}
+            />
+            <Button
+              type="button"
+              onClick={handleRunPipeline}
+              disabled={isRunDisabled}
+              className="h-12 w-12 shrink-0 rounded-full p-0 text-xl"
+              aria-label="이미지 생성"
+            >
+              {isGenerating ? "..." : "→"}
+            </Button>
           </div>
-        }
-      />
-    </div>
+
+          {runError ? <p className="mx-auto mt-2 w-full max-w-3xl text-xs text-rose-600">{runError}</p> : null}
+          {!previewUrl && imageHydrated ? (
+            <p className="mx-auto mt-2 w-full max-w-3xl text-xs text-amber-700">
+              생성하려면 먼저 업로드 이미지를 등록해 주세요.
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </>
   );
 }
-
