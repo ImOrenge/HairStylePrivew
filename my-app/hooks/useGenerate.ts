@@ -5,6 +5,7 @@ import { useGenerationStore } from "../store/useGenerationStore";
 
 interface PromptApiResponse {
   prompt?: string;
+  promptArtifactToken?: string;
   researchReport?: string;
   productRequirements?: string;
   model?: string;
@@ -27,6 +28,7 @@ interface GenerationApiResponse {
 
 export interface PipelinePromptArtifacts {
   prompt: string;
+  promptArtifactToken: string;
   researchReport: string | null;
   productRequirements: string | null;
   deepResearch: PromptApiResponse["deepResearch"] | null;
@@ -63,6 +65,7 @@ export function useGenerate() {
   const requestImageGeneration = useCallback(
     async (payload: {
       prompt: string;
+      promptArtifactToken: string;
       productRequirements?: string;
       researchReport?: string;
       imageDataUrl: string;
@@ -97,9 +100,21 @@ export function useGenerate() {
   );
 
   const runGeneration = useCallback(
-    async (prompt: string, productRequirements?: string, researchReport?: string) => {
+    async (
+      prompt: string,
+      promptArtifactToken: string,
+      productRequirements?: string,
+      researchReport?: string,
+    ) => {
       if (!originalImage) {
         const message = "업로드된 원본 이미지가 없습니다.";
+        setPipelineError(message);
+        setPipelineState("failed", message);
+        throw new Error(message);
+      }
+
+      if (!promptArtifactToken.trim()) {
+        const message = "프롬프트 토큰이 없어 생성을 진행할 수 없습니다.";
         setPipelineError(message);
         setPipelineState("failed", message);
         throw new Error(message);
@@ -115,6 +130,7 @@ export function useGenerate() {
         const imageDataUrl = await fileToDataUrl(originalImage);
         const result = await requestImageGeneration({
           prompt,
+          promptArtifactToken,
           productRequirements,
           researchReport,
           imageDataUrl,
@@ -198,10 +214,14 @@ export function useGenerate() {
         if (!promptData.prompt) {
           throw new Error("프롬프트 응답 형식이 올바르지 않습니다.");
         }
+        if (!promptData.promptArtifactToken) {
+          throw new Error("프롬프트 토큰이 없어 생성을 진행할 수 없습니다.");
+        }
         setProgress(50);
 
         const artifacts: PipelinePromptArtifacts = {
           prompt: promptData.prompt,
+          promptArtifactToken: promptData.promptArtifactToken,
           researchReport: promptData.researchReport || null,
           productRequirements: promptData.productRequirements || null,
           deepResearch: promptData.deepResearch || null,
@@ -212,6 +232,7 @@ export function useGenerate() {
         setPipelineState("generating_image", "프롬프트를 적용해 이미지를 생성하고 있습니다.");
         const generation = await requestImageGeneration({
           prompt: artifacts.prompt,
+          promptArtifactToken: artifacts.promptArtifactToken,
           productRequirements: artifacts.productRequirements || undefined,
           researchReport: artifacts.researchReport || undefined,
           imageDataUrl: referenceImageDataUrl,

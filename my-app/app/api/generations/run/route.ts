@@ -1,9 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { verifyPromptArtifactToken } from "../../../../lib/prompt-artifact-token";
 import { runGeminiImageGeneration } from "../../../../lib/gemini-image";
 
 interface RunGenerationRequest {
   prompt?: string;
+  promptArtifactToken?: string;
   productRequirements?: string;
   researchReport?: string;
   imageDataUrl?: string;
@@ -17,20 +19,27 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as RunGenerationRequest;
   const prompt = body.prompt?.trim();
+  const promptArtifactToken = body.promptArtifactToken?.trim();
+  const productRequirements = body.productRequirements?.trim();
+  const researchReport = body.researchReport?.trim();
 
   if (!prompt) {
     return NextResponse.json({ error: "prompt is required" }, { status: 400 });
+  }
+
+  if (!promptArtifactToken) {
+    return NextResponse.json({ error: "promptArtifactToken is required" }, { status: 400 });
   }
 
   if (prompt.length > 20_000) {
     return NextResponse.json({ error: "prompt is too long" }, { status: 400 });
   }
 
-  if (body.productRequirements && body.productRequirements.length > 30_000) {
+  if (productRequirements && productRequirements.length > 30_000) {
     return NextResponse.json({ error: "productRequirements is too long" }, { status: 400 });
   }
 
-  if (body.researchReport && body.researchReport.length > 30_000) {
+  if (researchReport && researchReport.length > 30_000) {
     return NextResponse.json({ error: "researchReport is too long" }, { status: 400 });
   }
 
@@ -43,10 +52,21 @@ export async function POST(request: Request) {
   }
 
   try {
+    const verification = verifyPromptArtifactToken({
+      token: promptArtifactToken,
+      userId,
+      prompt,
+      productRequirements: productRequirements || null,
+      researchReport: researchReport || null,
+    });
+    if (!verification.ok) {
+      return NextResponse.json({ error: "Invalid prompt artifact token" }, { status: 400 });
+    }
+
     const result = await runGeminiImageGeneration({
       prompt,
-      productRequirements: body.productRequirements?.trim(),
-      researchReport: body.researchReport?.trim(),
+      productRequirements,
+      researchReport,
       imageDataUrl: body.imageDataUrl,
     });
 
