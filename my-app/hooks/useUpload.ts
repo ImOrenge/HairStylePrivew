@@ -7,7 +7,7 @@ export type UploadStatus = "idle" | "checking" | "success" | "error";
 const MAX_FILE_SIZE_MB = 10;
 const MIN_RESOLUTION = 512;
 
-type FaceDetectionEngine = "face-api.js" | "FaceDetector" | "none";
+type FaceDetectionEngine = "FaceDetector" | "none";
 
 type FaceDetectorCtor = new (options?: {
   fastMode?: boolean;
@@ -45,8 +45,6 @@ const defaultDetails: UploadValidationDetails = {
   sizeMB: null,
 };
 
-let tinyFaceModelLoadPromise: Promise<void> | null = null;
-
 function getFaceDetectorCtor(): FaceDetectorCtor | null {
   if (typeof window === "undefined") {
     return null;
@@ -67,44 +65,6 @@ async function readImageDimensions(file: File) {
     });
   } finally {
     URL.revokeObjectURL(objectUrl);
-  }
-}
-
-async function loadTinyFaceModel() {
-  const faceapi = await import("face-api.js");
-
-  if (!tinyFaceModelLoadPromise) {
-    tinyFaceModelLoadPromise = faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-  }
-
-  await tinyFaceModelLoadPromise;
-  return faceapi;
-}
-
-async function detectFaceWithFaceApi(file: File) {
-  try {
-    const faceapi = await loadTinyFaceModel();
-    const objectUrl = URL.createObjectURL(file);
-
-    try {
-      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("image_load_failed"));
-        img.src = objectUrl;
-      });
-
-      const detection = await faceapi.detectSingleFace(
-        image,
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 }),
-      );
-
-      return { supported: true, detected: Boolean(detection) };
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
-  } catch {
-    return { supported: false, detected: null as boolean | null };
   }
 }
 
@@ -186,38 +146,6 @@ export function useUpload() {
     }
 
     setMessage("얼굴 감지를 수행하고 있습니다...");
-
-    const faceApiResult = await detectFaceWithFaceApi(file);
-
-    if (faceApiResult.supported && faceApiResult.detected === false) {
-      setStatus("error");
-      setDetails((prev) => ({
-        ...prev,
-        width: dimensions.width,
-        height: dimensions.height,
-        resolutionValid: true,
-        faceDetectionSupported: true,
-        faceDetectionEngine: "face-api.js",
-        faceValid: false,
-      }));
-      setMessage("얼굴이 감지되지 않았습니다. 정면 얼굴 사진으로 다시 시도해 주세요.");
-      return { ok: false, message: "face_not_detected" };
-    }
-
-    if (faceApiResult.supported && faceApiResult.detected === true) {
-      setStatus("success");
-      setDetails((prev) => ({
-        ...prev,
-        width: dimensions.width,
-        height: dimensions.height,
-        resolutionValid: true,
-        faceDetectionSupported: true,
-        faceDetectionEngine: "face-api.js",
-        faceValid: true,
-      }));
-      setMessage("얼굴 감지가 확인되었습니다. 생성 페이지로 이동할 수 있습니다.");
-      return { ok: true, message: "ok" };
-    }
 
     const browserFaceResult = await detectFaceWithBrowserApi(file);
 

@@ -100,13 +100,22 @@ const ko = {
     // Generate page
     "generate.title": "스타일 생성",
     "generate.subtitle": "입력한 요청으로 프롬프트 생성부터 이미지 생성까지 한 번에 실행합니다.",
-    "generate.placeholder": "예: 자연스러운 웨이브 펌, 앞머리는 가볍게",
+    "generate.placeholder": "예: 가벼운 앞머리가 있는 웨이브 펌",
+
+    // Result page
+    "result.title": "결과 확인",
+    "result.id": "업로드 코드",
+    "result.noOutput": "생성 결과가 아직 없습니다. 생성이 진행 중이거나 실패했을 수 있습니다.",
+    "result.evaluation.title": "AI 스타일 분석",
+    "result.evaluation.score": "점수",
+    "result.evaluation.comment": "전문가 코멘트",
+    "result.evaluation.tips": "스타일링 팁",
     "generate.loading": "업로드한 이미지를 불러오는 중입니다...",
     "generate.noImage": "업로드된 이미지가 없습니다. `/upload`에서 사진을 먼저 등록해 주세요.",
     "generate.error": "생성 중 오류가 발생했습니다.",
     "generate.promptMeta": "생성 프롬프트 메타",
-    "generate.needUpload": "생성하려면 먼저 업로드 이미지를 등록해 주세요.",
     "generate.ariaLabel": "이미지 생성",
+    "generate.needUpload": "생성하려면 먼저 업로드 이미지를 등록해 주세요.",
 } as const;
 
 export type TranslationKey = keyof typeof ko;

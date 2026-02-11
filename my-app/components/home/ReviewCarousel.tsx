@@ -8,8 +8,9 @@ export function ReviewCarousel() {
   const t = useT();
   const [index, setIndex] = useState(0);
 
-  const reviews = useMemo(
+  const reviews = useMemo<{ author: string; role: string; body: string; result: string; rating: number }[]>(
     () => [
+      /*
       {
         author: t("reviews.r1.author"),
         role: t("reviews.r1.role"),
@@ -31,9 +32,12 @@ export function ReviewCarousel() {
         result: t("reviews.r3.result"),
         rating: 4,
       },
+      */
     ],
     [t],
   );
+
+  if (reviews.length === 0) return null;
 
   const current = reviews[index];
 

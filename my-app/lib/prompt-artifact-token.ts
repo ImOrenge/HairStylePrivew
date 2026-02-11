@@ -69,7 +69,8 @@ function getSigningSecret(): string {
   const secret = internal || clerk;
 
   if (!secret || secret.includes("YOUR_")) {
-    throw new Error("Missing signing secret for prompt artifact token");
+    console.error("[auth] Missing signing secret: Both INTERNAL_API_SECRET and CLERK_SECRET_KEY are unset or invalid.");
+    throw new Error("Missing signing secret for prompt artifact token. Please check your environment variables.");
   }
 
   return secret;

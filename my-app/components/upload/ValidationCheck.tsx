@@ -23,11 +23,7 @@ function formatCheckState(value: boolean | null) {
 
 export function ValidationCheck({ status, message, details }: ValidationCheckProps) {
   const engineLabel =
-    details.faceDetectionEngine === "face-api.js"
-      ? "face-api.js"
-      : details.faceDetectionEngine === "FaceDetector"
-        ? "FaceDetector"
-        : "미사용";
+    details.faceDetectionEngine === "FaceDetector" ? "FaceDetector" : "미사용";
 
   return (
     <section className={`rounded-xl px-4 py-3 ${toneMap[status]}`}>

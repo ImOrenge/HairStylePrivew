@@ -1,9 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getCreditsPerStyle } from "../../../../lib/pricing-plan";
 import { verifyPromptArtifactToken } from "../../../../lib/prompt-artifact-token";
 import { getSupabaseAdminClient } from "../../../../lib/supabase";
 import { getGeminiImageModel, runGeminiImageGeneration } from "../../../../lib/gemini-image";
+import { runAIEvaluation } from "../../../../lib/ai-evaluation";
 
 interface RunGenerationRequest {
   generationId?: string;
@@ -124,6 +125,23 @@ export async function POST(request: Request) {
   const imageModel = getGeminiImageModel();
   const runStartedAt = new Date().toISOString();
 
+  // Ensure user profile exists in Supabase before proceeding
+  try {
+    const user = await currentUser();
+    const primaryEmail = user?.emailAddresses?.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress;
+
+    if (primaryEmail) {
+      await supabase.rpc("ensure_user_profile", {
+        p_user_id: userId,
+        p_email: primaryEmail,
+        p_display_name: user.fullName || user.username || null,
+      });
+    }
+  } catch (syncError) {
+    console.warn("[generations/run] Auto-sync failed", syncError);
+    // Continue anyway, it might fail later on FK but we tried.
+  }
+
   let generationId = requestedGenerationId ?? "";
   let existingOptions: Record<string, unknown> = {};
   let creditsConsumed = false;
@@ -243,11 +261,20 @@ export async function POST(request: Request) {
       imageDataUrl: body.imageDataUrl,
     });
 
+    // Run AI Evaluation
+    let aiEvaluation = null;
+    try {
+      aiEvaluation = await runAIEvaluation(sanitizedPrompt, body.imageDataUrl, result.outputUrl!);
+    } catch (evalError) {
+      console.error("[generations/run] AI Evaluation failed", evalError);
+    }
+
     const completedOptions = {
       ...processingOptions,
       runCompletedAt: new Date().toISOString(),
       imageProviderRunId: result.id,
       imageUsage: result.usage ?? null,
+      aiEvaluation,
     };
 
     const { error: completeUpdateError } = await supabase

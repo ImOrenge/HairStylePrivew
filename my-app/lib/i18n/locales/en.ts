@@ -103,6 +103,15 @@ const en: Record<TranslationKey, string> = {
     "generate.title": "Generate Style",
     "generate.subtitle": "From prompt generation to image creation in one go.",
     "generate.placeholder": "e.g. Wave perm with light bangs",
+
+    // Result page
+    "result.title": "Result Preview",
+    "result.id": "Generation ID",
+    "result.noOutput": "Result image not found. It might be processing or failed.",
+    "result.evaluation.title": "AI Style Analysis",
+    "result.evaluation.score": "Score",
+    "result.evaluation.comment": "Expert Comment",
+    "result.evaluation.tips": "Styling Tips",
     "generate.loading": "Loading your image…",
     "generate.noImage": "No image uploaded. Please upload a photo at /upload.",
     "generate.error": "Generation error.",
