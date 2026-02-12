@@ -64,11 +64,15 @@ function sha256Base64Url(value?: string | null): string {
 }
 
 function getSigningSecret(): string {
-  const internal = process.env.INTERNAL_API_SECRET?.trim();
-  const clerk = process.env.CLERK_SECRET_KEY?.trim();
-  const secret = internal || clerk;
+  const candidates = [
+    process.env.INTERNAL_API_SECRET,
+    process.env.CLERK_SECRET_KEY,
+  ];
+  const secret = candidates
+    .map((value) => value?.trim())
+    .find((value) => value && !value.includes("YOUR_"));
 
-  if (!secret || secret.includes("YOUR_")) {
+  if (!secret) {
     console.error("[auth] Missing signing secret: Both INTERNAL_API_SECRET and CLERK_SECRET_KEY are unset or invalid.");
     throw new Error("Missing signing secret for prompt artifact token. Please check your environment variables.");
   }
@@ -162,4 +166,3 @@ export function verifyPromptArtifactToken(
 
   return { ok: true, payload };
 }
-
