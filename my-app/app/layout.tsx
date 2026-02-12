@@ -35,4 +35,6 @@ export default function RootLayout({
   if (!canUseClerkFrontend || !publishableKey) {
     return appShell;
   }
+
+  return <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider>;
 }
