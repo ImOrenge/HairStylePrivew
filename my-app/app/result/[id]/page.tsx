@@ -8,13 +8,15 @@ import { ComparisonView } from "../../../components/result/ComparisonView";
 import { FeedbackModal } from "../../../components/result/FeedbackModal";
 import { AIEvaluationView } from "../../../components/result/AIEvaluationView";
 import { useGenerationStore } from "../../../store/useGenerationStore";
-import { createClient } from "@supabase/supabase-js";
+import { convertImageSrcToWebpDataUrl } from "../../../lib/webp-client";
 import { type AIEvaluationResult } from "../../../lib/ai-evaluation";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+interface GenerationDetailsResponse {
+  options?: {
+    aiEvaluation?: AIEvaluationResult;
+  } | null;
+  generatedImagePath?: string | null;
+}
 
 export default function ResultPage() {
   const t = useT();
@@ -37,20 +39,26 @@ export default function ResultPage() {
     // Fetch evaluation and output url from DB if not in store
     async function fetchGeneration() {
       if (!id || id === "unknown") return;
-      const { data, error } = await supabase
-        .from("generations")
-        .select("options, generated_image_path")
-        .eq("id", id)
-        .single();
+      const response = await fetch(`/api/generations/${encodeURIComponent(id)}`, {
+        method: "GET",
+        cache: "no-store",
+      });
 
-      if (data && !error) {
-        const options = data.options as any;
-        if (options?.aiEvaluation) {
-          setEvaluation(options.aiEvaluation);
-        }
-        if (data.generated_image_path) {
-          setDbOutputUrl(data.generated_image_path);
-        }
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json().catch(() => null)) as GenerationDetailsResponse | null;
+      if (!data) {
+        return;
+      }
+
+      const options = data.options;
+      if (options?.aiEvaluation) {
+        setEvaluation(options.aiEvaluation);
+      }
+      if (data.generatedImagePath) {
+        setDbOutputUrl(data.generatedImagePath);
       }
     }
 
@@ -61,11 +69,27 @@ export default function ResultPage() {
   const isSamePrediction = latestPredictionId === id;
 
   const beforeImage = previewUrl || "https://placehold.co/900x1200?text=Original";
-  const afterImage =
+  const rawAfterImage =
     (isSamePrediction ? latestOutputUrl : null) ||
     dbOutputUrl ||
     outputFromQuery ||
     "https://placehold.co/900x1200?text=Generated";
+  const [afterImage, setAfterImage] = useState(rawAfterImage);
+
+  useEffect(() => {
+    let active = true;
+    const applyWebp = async () => {
+      const webpSrc = await convertImageSrcToWebpDataUrl(rawAfterImage);
+      if (active) {
+        setAfterImage(webpSrc || rawAfterImage);
+      }
+    };
+    void applyWebp();
+
+    return () => {
+      active = false;
+    };
+  }, [rawAfterImage]);
 
   const hasRealOutput = useMemo(
     () =>
