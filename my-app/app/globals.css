@@ -1,11 +1,19 @@
 ﻿@import "tailwindcss";
 
 :root {
-  color-scheme: light;
   --canvas: #f7f3eb;
   --canvas-soft: #fffcf7;
   --ink-900: #1f1a17;
   --ink-700: #463d36;
+  --accent: #f59e0b;
+}
+
+.dark {
+  --canvas: #111111;
+  --canvas-soft: #090909;
+  --ink-900: #ffffff;
+  --ink-700: #d4d4d8;
+  --accent: #fbbf24;
 }
 
 * {
@@ -19,10 +27,20 @@ body {
   font-family: "Pretendard", "Noto Sans KR", sans-serif;
   color: var(--ink-900);
   background-color: var(--canvas-soft);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
   background-image:
-    radial-gradient(circle at 8% 15%, rgba(245, 158, 11, 0.18), transparent 42%),
-    radial-gradient(circle at 84% 9%, rgba(190, 24, 93, 0.09), transparent 36%),
-    linear-gradient(180deg, #fffcf8 0%, #f6efe3 100%);
+    radial-gradient(circle at 8% 15%, rgba(245, 158, 11, 0.15), transparent 42%),
+    radial-gradient(circle at 84% 9%, rgba(190, 24, 93, 0.07), transparent 36%);
+}
+
+.dark body {
+  background-image:
+    radial-gradient(circle at 8% 15%, rgba(245, 158, 11, 0.08), transparent 42%),
+    radial-gradient(circle at 84% 9%, rgba(190, 24, 93, 0.05), transparent 36%),
+    linear-gradient(180deg, #090909 0%, #111111 100%);
 }
 
 a {

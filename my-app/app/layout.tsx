@@ -6,6 +6,7 @@ import { Footer } from "../components/layout/Footer";
 import { Header } from "../components/layout/Header";
 import { LocaleSync } from "../components/layout/LocaleSync";
 import { getClerkConfigState } from "../lib/clerk";
+import { ThemeProvider } from "../components/providers/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "HairFit",
@@ -18,19 +19,20 @@ export default function RootLayout({
   const { canUseClerkFrontend, publishableKey } = getClerkConfigState();
 
   const appShell = (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body>
-        <LocaleSync />
-        <Header clerkEnabled={canUseClerkFrontend} />
-        <main>{children}</main>
-        <Footer />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <LocaleSync />
+          <Header clerkEnabled={canUseClerkFrontend} />
+          <main>{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );
 
+
   if (!canUseClerkFrontend || !publishableKey) {
     return appShell;
   }
-
-  return <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider>;
 }

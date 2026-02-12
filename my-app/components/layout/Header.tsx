@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useT } from "../../lib/i18n/useT";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { ClerkAuthButtons } from "./ClerkAuthButtons";
+import { ThemeToggle } from "./ThemeToggle";
 
 type HeaderProps = {
   clerkEnabled: boolean;
@@ -14,48 +15,52 @@ export function Header({ clerkEnabled }: HeaderProps) {
   const t = useT();
 
   return (
-    <header className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="inline-flex items-center">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/logo.png"
-              alt="HairFit"
-              width={40}
-              height={40}
-              priority
-              className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl object-contain"
-            />
-            <span className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-              HairFit
-            </span>
-          </div>
+    <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-white/80 backdrop-blur transition-colors dark:border-zinc-800/60 dark:bg-zinc-950/80">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="HairFit Logo"
+            width={36}
+            height={36}
+            className="h-9 w-auto object-contain transition-all dark:brightness-110"
+          />
+          <span className="text-xl font-black tracking-tighter text-zinc-900 dark:text-white">HairFit</span>
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm text-gray-700">
-          <Link href="/upload" className="hover:text-black">{t("nav.upload")}</Link>
-          <Link href="/generate" className="hover:text-black">{t("nav.generate")}</Link>
-          <Link href="/mypage" className="hover:text-black">{t("nav.mypage")}</Link>
+        <nav className="flex items-center gap-4 text-sm font-medium">
+          <Link href="/upload" className="text-stone-600 hover:text-black dark:text-zinc-400 dark:hover:text-white">
+            {t("nav.upload")}
+          </Link>
+          <Link href="/generate" className="text-stone-600 hover:text-black dark:text-zinc-400 dark:hover:text-white">
+            {t("nav.generate")}
+          </Link>
+          <Link href="/mypage" className="text-stone-600 hover:text-black dark:text-zinc-400 dark:hover:text-white">
+            {t("nav.mypage")}
+          </Link>
 
           {clerkEnabled ? (
             <ClerkAuthButtons />
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="rounded-full border border-gray-300 px-4 py-2 text-xs font-semibold hover:bg-gray-100"
+                className="rounded-full border border-stone-300 px-4 py-1.5 text-xs font-semibold hover:bg-stone-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 {t("nav.login")}
               </Link>
               <Link
                 href="/signup"
-                className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800"
+                className="rounded-full bg-stone-900 px-4 py-1.5 text-xs font-semibold text-white hover:bg-stone-800 dark:bg-white dark:text-stone-900 dark:hover:bg-zinc-200"
               >
                 {t("nav.signup")}
               </Link>
-            </>
+            </div>
           )}
-          <LanguageSwitch />
+          <div className="flex items-center gap-1 border-l border-stone-200 pl-3 dark:border-zinc-800">
+            <ThemeToggle />
+            <LanguageSwitch />
+          </div>
         </nav>
       </div>
     </header>
