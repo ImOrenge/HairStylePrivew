@@ -9,7 +9,12 @@ import styles from "./HeroSection.module.css";
 
 type GenderKey = "male" | "female";
 
-export function HeroSection() {
+interface HeroSectionProps {
+  userCount?: number;
+  avatars?: string[];
+}
+
+export function HeroSection({ userCount = 0, avatars = [] }: HeroSectionProps) {
   const t = useT();
   const [activeGender, setActiveGender] = useState<GenderKey>("male");
 
@@ -52,6 +57,37 @@ export function HeroSection() {
           <p className="mt-4 min-h-[3rem] max-w-xl text-sm leading-6 text-zinc-100 sm:min-h-[4rem] sm:text-base">
             {t("hero.subtitle")}
           </p>
+
+          {/* Social Proof Indicator */}
+          {userCount > 0 && (
+            <div className="mt-8 flex items-center gap-4">
+              <div className="flex -space-x-3 overflow-hidden">
+                {avatars.map((url, i) => (
+                  <div
+                    key={i}
+                    className="relative inline-block h-10 w-10 overflow-hidden rounded-full border-2 border-slate-800 bg-zinc-800 shadow-xl transition-transform hover:scale-110"
+                    style={{ zIndex: avatars.length - i }}
+                  >
+                    <Image
+                      src={url}
+                      alt="User avatar"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+                {userCount > avatars.length && (
+                  <div className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-800 bg-zinc-800 text-[10px] font-bold text-zinc-300 shadow-xl backdrop-blur-md">
+                    +{userCount - avatars.length}
+                  </div>
+                )}
+              </div>
+              <p className="text-sm font-medium text-zinc-300">
+                {t("hero.socialProof").replace("{{count}}", userCount.toLocaleString())}
+              </p>
+            </div>
+          )}
+
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/upload">
               <Button className="bg-white text-zinc-900 hover:bg-zinc-200">{t("hero.cta.start")}</Button>
