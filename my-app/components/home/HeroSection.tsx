@@ -82,7 +82,7 @@ export function HeroSection({ userCount = 0, avatars = [] }: HeroSectionProps) {
                   </div>
                 )}
               </div>
-              <p className="text-sm font-medium text-zinc-300">
+              <p className="text-sm font-bold tracking-tight text-white">
                 {t("hero.socialProof").replace("{{count}}", userCount.toLocaleString())}
               </p>
             </div>

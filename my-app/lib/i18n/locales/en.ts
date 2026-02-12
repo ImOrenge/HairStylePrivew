@@ -17,7 +17,7 @@ const en: Record<TranslationKey, string> = {
     "hero.badge": "HairFit",
     "hero.title": "Preview your hairstyle\nwith a single prompt",
     "hero.subtitle": "Upload a photo and instantly overlay any style — see the result before you commit.",
-    "hero.socialProof": "Over **{{count}} members** have joined HairFit",
+    "hero.socialProof": "+ {{count}} USERS",
     "hero.cta.start": "Start Free",
     "hero.cta.demo": "View Demo",
     "hero.gender.male": "Male",
