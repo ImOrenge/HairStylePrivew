@@ -3,6 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     images: {
         formats: ["image/webp"],
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "img.clerk.com",
+                pathname: "/**",
+            },
+        ],
     },
     async headers() {
         return [
