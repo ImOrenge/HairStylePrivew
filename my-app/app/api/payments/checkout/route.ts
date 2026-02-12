@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createPolarCheckoutSession, isPolarConfigured } from "../../../../lib/polar";
 import { getSuggestedPricingTiers } from "../../../../lib/pricing-plan";
@@ -16,6 +16,10 @@ interface CheckoutRequestBody {
 }
 
 interface InsertPaymentTransactionResult {
+  id: string;
+}
+
+interface EnsureUserProfileResult {
   id: string;
 }
 
@@ -119,6 +123,18 @@ export async function POST(request: Request) {
 
   let paymentTransactionId = "";
   try {
+    const clerkUser = await currentUser();
+    const fallbackEmail = `${userId}@placeholder.local`;
+    const email =
+      clerkUser?.primaryEmailAddress?.emailAddress?.trim() ??
+      clerkUser?.emailAddresses?.[0]?.emailAddress?.trim() ??
+      fallbackEmail;
+    const displayName =
+      clerkUser?.fullName?.trim() ??
+      clerkUser?.firstName?.trim() ??
+      clerkUser?.username?.trim() ??
+      null;
+
     const supabase = getSupabaseAdminClient() as unknown as {
       from: (table: string) => {
         insert: (values: Record<string, unknown>) => {
@@ -133,7 +149,21 @@ export async function POST(request: Request) {
           eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>;
         };
       };
+      rpc: (
+        fn: string,
+        params: Record<string, unknown>,
+      ) => Promise<{ data: EnsureUserProfileResult | null; error: { message: string } | null }>;
     };
+
+    const { error: ensureProfileError } = await supabase.rpc("ensure_user_profile", {
+      p_user_id: userId,
+      p_email: email,
+      p_display_name: displayName,
+    });
+
+    if (ensureProfileError) {
+      return NextResponse.json({ error: ensureProfileError.message }, { status: 500 });
+    }
 
     const txMetadata: Record<string, unknown> = {
       product_id: productId,

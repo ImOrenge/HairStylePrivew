@@ -96,6 +96,8 @@ const ko = {
     "upload.guide": "가이드 보기",
     "upload.reset": "초기화",
     "upload.next": "다음 단계",
+    "upload.camera": "사진 촬영",
+    "upload.cameraGuide": "카메라를 직접 사용하여 얼굴 사진을 촬영할 수 있습니다.",
 
     // Generate page
     "generate.title": "스타일 생성",
@@ -110,6 +112,12 @@ const ko = {
     "result.evaluation.score": "점수",
     "result.evaluation.comment": "전문가 코멘트",
     "result.evaluation.tips": "스타일링 팁",
+    "result.action.share": "공유하기",
+    "result.action.copy": "링크 복사",
+    "result.action.copied": "복사 완료!",
+    "result.action.download": "다운로드",
+    "result.action.downloading": "다운로드 중...",
+    "result.action.regenerate": "옵션 수정 후 다시 생성",
     "generate.loading": "업로드한 이미지를 불러오는 중입니다...",
     "generate.noImage": "업로드된 이미지가 없습니다. `/upload`에서 사진을 먼저 등록해 주세요.",
     "generate.error": "생성 중 오류가 발생했습니다.",

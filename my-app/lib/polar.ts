@@ -122,8 +122,17 @@ export function verifyPolarWebhookSignature(
     throw new Error("Missing required webhook signature headers");
   }
 
+  const createWebhookVerifier = () => {
+    try {
+      return new Webhook(webhookSecret);
+    } catch {
+      // Polar secrets may be raw (plain) or base64-encoded depending on setup.
+      return new Webhook(webhookSecret, { format: "raw" });
+    }
+  };
+
   try {
-    const webhook = new Webhook(webhookSecret);
+    const webhook = createWebhookVerifier();
     const event = webhook.verify(payload, {
       "webhook-id": webhookId,
       "webhook-timestamp": webhookTimestamp,

@@ -2,6 +2,7 @@
 
 import { useT } from "../../lib/i18n/useT";
 import { type AIEvaluationResult } from "../../lib/ai-evaluation";
+import { motion } from "framer-motion";
 
 interface AIEvaluationViewProps {
     evaluation: AIEvaluationResult;
@@ -12,49 +13,135 @@ export function AIEvaluationView({ evaluation }: AIEvaluationViewProps) {
     const { score, comment, tips } = evaluation;
 
     // Color logic for score
-    const getScoreColor = (s: number) => {
-        if (s >= 85) return "text-emerald-500 border-emerald-200 bg-emerald-50";
-        if (s >= 70) return "text-amber-500 border-amber-200 bg-amber-50";
-        return "text-rose-500 border-rose-200 bg-rose-50";
+    const getScoreColors = (s: number) => {
+        if (s >= 85) return {
+            text: "text-emerald-600",
+            bg: "bg-emerald-50",
+            border: "border-emerald-100",
+            ring: "stroke-emerald-500"
+        };
+        if (s >= 70) return {
+            text: "text-amber-600",
+            bg: "bg-amber-50",
+            border: "border-amber-100",
+            ring: "stroke-amber-500"
+        };
+        return {
+            text: "text-rose-600",
+            bg: "bg-rose-50",
+            border: "border-rose-100",
+            ring: "stroke-rose-500"
+        };
     };
 
-    const scoreStyles = getScoreColor(score);
+    const colors = getScoreColors(score);
+    const radius = 36;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 100) * circumference;
 
     return (
-        <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-[0_20px_40px_rgba(0,0,0,0.04)]">
-            <div className="flex flex-col gap-6 p-6 sm:p-8">
-                <header className="flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase tracking-widest text-stone-400">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="group w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-stone-200 bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all hover:shadow-[0_48px_80px_-24px_rgba(0,0,0,0.12)]"
+        >
+            <div className="relative flex flex-col gap-8 p-8 sm:p-10">
+                {/* Background Accent */}
+                <div className={`absolute -right-20 -top-20 h-64 w-64 rounded-full ${colors.bg} opacity-20 blur-3xl`} />
+
+                <header className="relative flex flex-col-reverse items-start justify-between gap-6 sm:flex-row sm:items-center">
+                    <div className="space-y-2">
+                        <motion.p
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400"
+                        >
                             {t("result.evaluation.title")}
-                        </p>
-                        <h2 className="text-xl font-bold text-stone-900">{t("result.evaluation.comment")}</h2>
+                        </motion.p>
+                        <motion.h2
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-2xl font-extrabold tracking-tight text-stone-900"
+                        >
+                            {t("result.evaluation.comment")}
+                        </motion.h2>
                     </div>
-                    <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border text-xl font-black ${scoreStyles}`}>
-                        {score}
+
+                    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+                        <svg className="h-full w-full -rotate-90 transform">
+                            <circle
+                                cx="48"
+                                cy="48"
+                                r={radius}
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                fill="transparent"
+                                className="text-stone-100"
+                            />
+                            <motion.circle
+                                cx="48"
+                                cy="48"
+                                r={radius}
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                fill="transparent"
+                                strokeDasharray={circumference}
+                                initial={{ strokeDashoffset: circumference }}
+                                animate={{ strokeDashoffset: offset }}
+                                transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                                className={colors.ring}
+                                strokeLinecap="round"
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className={`text-2xl font-black ${colors.text}`}>{score}</span>
+                            <span className="text-[10px] font-bold text-stone-400 uppercase">Score</span>
+                        </div>
                     </div>
                 </header>
 
-                <p className="text-lg leading-relaxed text-stone-700">
-                    &ldquo;{comment}&rdquo;
-                </p>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="relative"
+                >
+                    <span className="absolute -left-4 -top-2 text-6xl text-stone-100 font-serif">&ldquo;</span>
+                    <p className="relative text-xl font-medium leading-relaxed italic text-stone-800">
+                        {comment}
+                    </p>
+                </motion.div>
 
-                <hr className="border-stone-100" />
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
 
-                <div className="space-y-4">
-                    <h3 className="text-sm font-bold text-stone-900">{t("result.evaluation.tips")}</h3>
-                    <ul className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-6">
+                    <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-stone-500">
+                        <span className="h-1.5 w-1.5 rounded-full bg-stone-900" />
+                        {t("result.evaluation.tips")}
+                    </h3>
+                    <ul className="grid gap-4 sm:grid-cols-2">
                         {tips.map((tip, i) => (
-                            <li key={i} className="flex items-start gap-3 rounded-xl bg-stone-50 p-3 text-sm text-stone-600">
-                                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-stone-900 text-[10px] text-white">
+                            <motion.li
+                                key={i}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.8 + (i * 0.1) }}
+                                className="group/item relative flex items-start gap-4 rounded-2xl border border-stone-100 bg-stone-50/50 p-4 transition-all hover:bg-white hover:shadow-lg hover:shadow-stone-200/50"
+                            >
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-stone-900 text-[10px] font-bold text-white transition-transform group-hover/item:scale-110">
                                     {i + 1}
                                 </span>
-                                {tip}
-                            </li>
+                                <span className="text-sm font-medium leading-snug text-stone-600 transition-colors group-hover/item:text-stone-900">
+                                    {tip}
+                                </span>
+                            </motion.li>
                         ))}
                     </ul>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

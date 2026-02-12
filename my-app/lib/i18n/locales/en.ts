@@ -98,6 +98,8 @@ const en: Record<TranslationKey, string> = {
     "upload.guide": "Guide",
     "upload.reset": "Reset",
     "upload.next": "Next Step",
+    "upload.camera": "Take Photo",
+    "upload.cameraGuide": "Take a photo directly with your camera.",
 
     // Generate page
     "generate.title": "Generate Style",
@@ -112,6 +114,12 @@ const en: Record<TranslationKey, string> = {
     "result.evaluation.score": "Score",
     "result.evaluation.comment": "Expert Comment",
     "result.evaluation.tips": "Styling Tips",
+    "result.action.share": "Share",
+    "result.action.copy": "Copy Link",
+    "result.action.copied": "Copied!",
+    "result.action.download": "Download",
+    "result.action.downloading": "Downloading...",
+    "result.action.regenerate": "Edit & Regenerate",
     "generate.loading": "Loading your image…",
     "generate.noImage": "No image uploaded. Please upload a photo at /upload.",
     "generate.error": "Generation error.",

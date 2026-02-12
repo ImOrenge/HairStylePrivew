@@ -115,4 +115,25 @@ Clerk note:
   - Updates `payment_transactions` to `paid` and calls `apply_payment_credits` RPC.
   - Sends payment success email when `RESEND_API_KEY` is configured.
 
+## Polar webhook setup
+
+1. In Polar dashboard, create a webhook endpoint with:
+   - URL: `https://<your-domain>/api/payments/webhook`
+   - Event: `order.paid`
+2. Copy the webhook signing secret from Polar and set:
+   - `POLAR_WEBHOOK_SECRET=<secret from Polar dashboard>`
+3. Ensure runtime env has:
+   - `POLAR_ACCESS_TOKEN`
+   - `POLAR_WEBHOOK_SECRET`
+4. Deploy app, then send a Polar test event.
+
+Local signed webhook test (without Polar dashboard):
+
+```bash
+npm run polar:webhook:test -- --url=http://localhost:3000/api/payments/webhook --paymentTxId=<payment_transaction_id>
+```
+
+If the payment transaction ID exists, API should return `200` with `ledgerId`.
+If not, API may return `202` with an ignored reason, which still confirms signature verification path is working.
+
 For local Wrangler preview, copy `.dev.vars.example` to `.dev.vars` and fill values.

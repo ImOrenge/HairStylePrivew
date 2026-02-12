@@ -1,11 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { getPricingEconomics, getSuggestedPricingTiers } from "../../lib/pricing-plan";
 import { cn } from "../../lib/utils";
 import { useT } from "../../lib/i18n/useT";
 
+type PlanKey = "free" | "starter" | "pro";
+
+interface CheckoutResponseBody {
+  checkoutUrl?: string;
+  error?: string;
+}
+
 export function PricingPreview() {
   const t = useT();
+  const [pendingPlan, setPendingPlan] = useState<PlanKey | null>(null);
   const economics = getPricingEconomics();
   const suggestedTiers = getSuggestedPricingTiers();
   const tierByKey = new Map<string, (typeof suggestedTiers)[number]>(suggestedTiers.map((tier) => [tier.key, tier]));
@@ -62,6 +71,57 @@ export function PricingPreview() {
       credits: t("pricing.credits", { credits: tier.monthlyCredits, styles: tier.estimatedStyles }),
     };
   });
+
+  const startStarterCheckout = async () => {
+    setPendingPlan("starter");
+
+    try {
+      const response = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan: "starter" }),
+      });
+
+      const result = (await response.json().catch(() => ({}))) as CheckoutResponseBody;
+      if (response.status === 401) {
+        const returnPath = `${window.location.pathname}${window.location.search}`;
+        window.location.assign(`/login?redirect_url=${encodeURIComponent(returnPath)}`);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || `Checkout request failed (${response.status})`);
+      }
+
+      if (!result.checkoutUrl) {
+        throw new Error("Missing checkoutUrl from API response");
+      }
+
+      window.location.assign(result.checkoutUrl);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to start checkout";
+      console.error("[pricing] starter checkout failed:", error);
+      window.alert(message);
+    } finally {
+      setPendingPlan(null);
+    }
+  };
+
+  const handlePlanClick = (planKey: string) => {
+    if (planKey === "starter") {
+      void startStarterCheckout();
+      return;
+    }
+
+    if (planKey === "free") {
+      window.location.assign("/signup");
+      return;
+    }
+
+    window.location.assign("/mypage");
+  };
 
   return (
     <section className="rounded-3xl border border-stone-200/80 bg-white/90 p-6 shadow-[0_18px_40px_rgba(120,91,54,0.12)] backdrop-blur sm:p-8">
@@ -124,6 +184,8 @@ export function PricingPreview() {
 
             <button
               type="button"
+              onClick={() => handlePlanClick(plan.key)}
+              disabled={pendingPlan === "starter"}
               className={cn(
                 "mt-auto inline-flex w-full items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition",
                 plan.tone === "recommended"
@@ -131,9 +193,10 @@ export function PricingPreview() {
                   : plan.tone === "premium"
                     ? "bg-stone-800 text-white hover:bg-stone-700"
                     : "border border-stone-300 bg-white text-stone-900 hover:bg-stone-100",
+                pendingPlan === "starter" && "cursor-not-allowed opacity-70",
               )}
             >
-              {plan.cta}
+              {pendingPlan === "starter" && plan.key === "starter" ? "Connecting..." : plan.cta}
             </button>
           </article>
         ))}

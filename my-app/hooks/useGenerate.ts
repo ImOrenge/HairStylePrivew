@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { convertImageSrcToWebpDataUrl } from "../lib/webp-client";
 import { useGenerationStore } from "../store/useGenerationStore";
 
 interface PromptApiResponse {
@@ -97,7 +98,8 @@ export function useGenerate() {
         throw new Error("생성 결과 이미지가 비어 있습니다.");
       }
 
-      return { id: result.id, outputUrl: currentOutputUrl };
+      const webpOutputUrl = (await convertImageSrcToWebpDataUrl(currentOutputUrl)) || currentOutputUrl;
+      return { id: result.id, outputUrl: webpOutputUrl };
     },
     [],
   );

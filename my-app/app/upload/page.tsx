@@ -7,6 +7,7 @@ import { UploadArea } from "../../components/upload/UploadArea";
 import { ValidationCheck } from "../../components/upload/ValidationCheck";
 import { Button } from "../../components/ui/Button";
 import { useUpload } from "../../hooks/useUpload";
+import { convertImageFileToWebp } from "../../lib/webp-client";
 import { useGenerationStore } from "../../store/useGenerationStore";
 import { useT } from "../../lib/i18n/useT";
 
@@ -29,7 +30,8 @@ export default function UploadPage() {
     try {
       const result = await validateImage(file);
       if (result.ok) {
-        setOriginalImage(file);
+        const webpFile = await convertImageFileToWebp(file);
+        setOriginalImage(webpFile);
       }
     } finally {
       setIsUploading(false);

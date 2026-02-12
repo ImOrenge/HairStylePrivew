@@ -39,6 +39,15 @@ function readString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function isDeliverableEmail(value: string): boolean {
+  const email = value.trim().toLowerCase();
+  if (!email || email.endsWith("@placeholder.local")) {
+    return false;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 function readPositiveInteger(value: unknown): number | undefined {
   if (!Number.isInteger(value) || Number(value) <= 0) {
     return undefined;
@@ -196,7 +205,7 @@ export async function POST(request: Request) {
           .maybeSingle<UserForEmailRow>();
 
         const userEmail = readString(userResult.data?.email);
-        if (userEmail) {
+        if (userEmail && isDeliverableEmail(userEmail)) {
           const appOrigin = new URL(request.url).origin;
           const myPageUrl = `${appOrigin}/mypage`;
           const plan = readString(txMetadata?.plan);
@@ -231,6 +240,8 @@ export async function POST(request: Request) {
           } else {
             console.error("[payments/webhook] failed to send receipt email:", emailResult.error);
           }
+        } else if (userEmail) {
+          console.warn("[payments/webhook] skipping receipt email: non-deliverable recipient", userEmail);
         }
       }
     }

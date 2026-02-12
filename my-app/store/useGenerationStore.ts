@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { clearOriginalImageCache, readOriginalImageFromCache, saveOriginalImageToCache } from "../lib/uploadImageCache";
+import { convertImageFileToWebp } from "../lib/webp-client";
 
 export type PipelineStage =
   | "idle"
@@ -110,13 +111,17 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     }
 
     const cachedFile = await readOriginalImageFromCache();
+    const normalizedFile = cachedFile ? await convertImageFileToWebp(cachedFile) : null;
+    if (normalizedFile && normalizedFile !== cachedFile) {
+      void saveOriginalImageToCache(normalizedFile);
+    }
 
     set((state) => {
       if (state.originalImage) {
         return { imageHydrated: true };
       }
 
-      if (!cachedFile) {
+      if (!normalizedFile) {
         return { imageHydrated: true };
       }
 
@@ -125,8 +130,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       }
 
       return {
-        originalImage: cachedFile,
-        previewUrl: URL.createObjectURL(cachedFile),
+        originalImage: normalizedFile,
+        previewUrl: URL.createObjectURL(normalizedFile),
         imageHydrated: true,
       };
     });
