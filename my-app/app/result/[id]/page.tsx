@@ -48,7 +48,7 @@ export default function ResultPage() {
         return;
       }
 
-      const data = (await response.json().catch(() => null)) as GenerationDetailsResponse | null;
+      const data = (await response.json().catch((error) => null)) as GenerationDetailsResponse | null;
       if (!data) {
         return;
       }

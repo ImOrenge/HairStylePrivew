@@ -92,11 +92,11 @@ export function ActionToolbar({ id, outputImageUrl = null }: ActionToolbarProps)
 
       triggerDownload(objectUrl, filename);
       URL.revokeObjectURL(objectUrl);
-    } catch {
+    } catch (error) {
       try {
         const ext = inferExtensionFromUrl(outputImageUrl) || "png";
         triggerDownload(outputImageUrl, `haristyle-${id}.${ext}`);
-      } catch {
+      } catch (error) {
         setDownloadError("다운로드에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       }
     } finally {

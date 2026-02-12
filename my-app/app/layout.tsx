@@ -21,7 +21,7 @@ export default function RootLayout({
   const appShell = (
     <html lang="ko" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LocaleSync />
           <Header clerkEnabled={canUseClerkFrontend} />
           <main>{children}</main>
