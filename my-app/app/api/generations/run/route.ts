@@ -128,15 +128,22 @@ export async function POST(request: Request) {
   // Ensure user profile exists in Supabase before proceeding
   try {
     const user = await currentUser();
-    const primaryEmail = user?.emailAddresses?.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress;
+    const fallbackEmail = `${userId}@placeholder.local`;
+    const email =
+      user?.primaryEmailAddress?.emailAddress?.trim() ??
+      user?.emailAddresses?.[0]?.emailAddress?.trim() ??
+      fallbackEmail;
+    const displayName =
+      user?.fullName?.trim() ??
+      user?.firstName?.trim() ??
+      user?.username?.trim() ??
+      null;
 
-    if (primaryEmail) {
-      await supabase.rpc("ensure_user_profile", {
-        p_user_id: userId,
-        p_email: primaryEmail,
-        p_display_name: user.fullName || user.username || null,
-      });
-    }
+    await supabase.rpc("ensure_user_profile", {
+      p_user_id: userId,
+      p_email: email,
+      p_display_name: displayName,
+    });
   } catch (syncError) {
     console.warn("[generations/run] Auto-sync failed", syncError);
     // Continue anyway, it might fail later on FK but we tried.

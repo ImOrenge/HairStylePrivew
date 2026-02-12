@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getCreditsPerStyle } from "../../../../lib/pricing-plan";
 import { createPromptArtifactToken } from "../../../../lib/prompt-artifact-token";
@@ -108,7 +108,32 @@ export async function POST(request: Request) {
           };
         };
       };
+      rpc: (
+        fn: string,
+        params: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
     };
+
+    const clerkUser = await currentUser();
+    const fallbackEmail = `${userId}@placeholder.local`;
+    const email =
+      clerkUser?.primaryEmailAddress?.emailAddress?.trim() ??
+      clerkUser?.emailAddresses?.[0]?.emailAddress?.trim() ??
+      fallbackEmail;
+    const displayName =
+      clerkUser?.fullName?.trim() ??
+      clerkUser?.firstName?.trim() ??
+      clerkUser?.username?.trim() ??
+      null;
+
+    const { error: ensureProfileError } = await supabase.rpc("ensure_user_profile", {
+      p_user_id: userId,
+      p_email: email,
+      p_display_name: displayName,
+    });
+    if (ensureProfileError) {
+      return NextResponse.json({ error: ensureProfileError.message }, { status: 500 });
+    }
 
     let resolvedGenerationId = requestedGenerationId ?? null;
     let originalImagePath: string | null = null;
