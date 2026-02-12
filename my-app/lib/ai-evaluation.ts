@@ -51,42 +51,63 @@ export async function runAIEvaluation(
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // Use flash for faster/cheaper evaluation
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const original = parseDataUrl(originalImageDataUrl);
     const generated = parseDataUrl(generatedImageDataUrl);
 
-    const result = await model.generateContent([
-        { text: EVALUATION_SYSTEM_PROMPT },
-        { text: `Target Prompt: ${prompt}` },
-        {
-            inlineData: {
-                mimeType: original.mimeType,
-                data: original.data,
-            },
-        },
-        {
-            inlineData: {
-                mimeType: generated.mimeType,
-                data: generated.data,
-            },
-        },
-    ]);
+    console.log("[ai-evaluation] Running evaluation for prompt:", prompt);
 
-    const responseText = result.response.text().trim();
     try {
-        const json = JSON.parse(responseText.replace(/```json/i, "").replace(/```/g, ""));
+        const result = await model.generateContent([
+            { text: EVALUATION_SYSTEM_PROMPT },
+            { text: `Target Prompt: ${prompt}` },
+            {
+                inlineData: {
+                    mimeType: original.mimeType,
+                    data: original.data,
+                },
+            },
+            {
+                inlineData: {
+                    mimeType: generated.mimeType,
+                    data: generated.data,
+                },
+            },
+        ]);
+
+        const responseText = result.response.text().trim();
+        console.log("[ai-evaluation] Gemini Response:", responseText);
+
+        // More robust JSON extraction
+        let jsonStr = responseText;
+        if (responseText.includes("```")) {
+            const matches = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (matches && matches[1]) {
+                jsonStr = matches[1].trim();
+            }
+        } else {
+            // Try to find the first '{' and last '}'
+            const start = responseText.indexOf("{");
+            const end = responseText.lastIndexOf("}");
+            if (start !== -1 && end !== -1) {
+                jsonStr = responseText.substring(start, end + 1);
+            }
+        }
+
+        const json = JSON.parse(jsonStr);
         return {
             score: typeof json.score === "number" ? json.score : 0,
             comment: typeof json.comment === "string" ? json.comment : "",
             tips: Array.isArray(json.tips) ? json.tips : [],
         };
     } catch (error) {
-        console.error("[ai-evaluation] Failed to parse Gemini response", responseText);
+        console.error("[ai-evaluation] Evaluation failed", error);
         return {
             score: 0,
-            comment: "정밀 평가를 생성하지 못했습니다.",
-            tips: ["잠시 후 다시 시도해 주세요."],
+            comment: "정밀 평가를 생성하지 못했습니다. (AI 분석 오류)",
+            tips: ["잠시 후 다시 시도해 주세요.", "데이터 형식이 올바르지 않을 수 있습니다."],
         };
     }
 }

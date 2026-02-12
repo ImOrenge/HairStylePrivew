@@ -50,6 +50,12 @@ export async function GET(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    console.log(`[api/generations/${id}] Found generation, status:`, data.status);
+    if (data.options && typeof data.options === "object") {
+      const opts = data.options as Record<string, unknown>;
+      console.log(`[api/generations/${id}] aiEvaluation present:`, !!opts.aiEvaluation);
+    }
+
     return NextResponse.json(
       {
         id: typeof data.id === "string" ? data.id : id,

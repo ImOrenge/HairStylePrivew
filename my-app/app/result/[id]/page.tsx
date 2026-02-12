@@ -101,7 +101,7 @@ export default function ResultPage() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-6 px-4 pb-32 pt-8 sm:px-6">
       <header className="w-full max-w-2xl space-y-1 text-center">
         <h1 className="text-2xl font-bold">{t("result.title")}</h1>
         <p className="text-sm text-gray-600">{t("result.id")}: {id}</p>
@@ -117,13 +117,10 @@ export default function ResultPage() {
 
       {evaluation && <AIEvaluationView evaluation={evaluation} />}
 
-      <div className="flex w-full max-w-2xl justify-center">
-        <ActionToolbar id={id} outputImageUrl={hasRealOutput ? afterImage : null} />
-      </div>
+      <ActionToolbar id={id} outputImageUrl={hasRealOutput ? afterImage : null} />
       <div className="flex w-full max-w-2xl justify-center">
         <FeedbackModal generationId={id} />
       </div>
     </div>
   );
 }
-
